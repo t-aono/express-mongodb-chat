@@ -10,3 +10,5 @@ html(lang="ja")
           h2 #{msg.username}
           time #{msg.date}
           p #{msg.message}
+        if msg.image_path
+          img(src=msg.image_path)
