@@ -1,5 +1,5 @@
 {
-  "name": "express-sample",
+  "name": "express-mongodb-chat",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
