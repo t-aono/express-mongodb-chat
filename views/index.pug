@@ -3,6 +3,14 @@ html(lang="ja")
   head
     meta(charset="utf-8")
   body
+    if user 
+     nav 
+      span #{user.username}
+      img(src=user.avatar_path)
+    else 
+      nav
+        a(href="/signup") ユーザー登録
+        a(href="/login") ログイン
     h1 メッセージ一覧
     section 
       each msg in messages 
