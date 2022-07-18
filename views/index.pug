@@ -9,8 +9,7 @@ html(lang="ja")
       img(src=user.avatar_path)
     else 
       nav
-        a(href="/signup") ユーザー登録
-        a(href="/login") ログイン
+        a(href="/oauth/twitter") ログイン
     h1 メッセージ一覧
     section 
       each msg in messages 
