@@ -6,6 +6,7 @@ var fileUpload = require("express-fileupload");
 var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
 var session = require("express-session");
+var logger = require("./lib/logger");
 
 var Message = require("./schema/Message");
 var User = require("./schema/User");
@@ -33,6 +34,8 @@ app.use("/image", express.static(path.join(__dirname, "image")));
 app.use("/avatar", express.static(path.join(__dirname, "avatar")));
 
 app.get("/", function (req, res) {
+  logger.warn(req.session.user);
+
   Message.find({}, function (err, msgs) {
     if (err) throw err;
     return res.render("index", {
