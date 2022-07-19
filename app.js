@@ -7,6 +7,7 @@ var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
 var session = require("express-session");
 var logger = require("./lib/logger");
+var errorLogger = require("./lib/error_logger");
 
 var Message = require("./schema/Message");
 var User = require("./schema/User");
@@ -136,6 +137,23 @@ app.post("/update", fileUpload(), function (req, res, next) {
       return res.redirect("/");
     });
   }
+});
+
+app.use(function (req, res, next) {
+  var err = new Error("Not Found");
+  err.status = 404;
+  return res.render("error", {
+    status: err.status,
+  });
+});
+
+app.use(function (err, req, res, next) {
+  errorLogger.error(err);
+  res.status(err.status || 500);
+  return res.render("error", {
+    message: err.message,
+    status: err.status || 500,
+  });
 });
 
 var server = http.createServer(app);
