@@ -6,6 +6,11 @@ var fileUpload = require("express-fileupload");
 var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
 var session = require("express-session");
+var helmet = require("helmet");
+var csrf = require("csurf");
+
+var logger = require("./lib/logger");
+var errorLogger = require("./lib/error_logger");
 
 var Message = require("./schema/Message");
 var User = require("./schema/User");
@@ -20,6 +25,8 @@ mongoose.connect("mongodb://localhost:27017/chat", function (err) {
   }
 });
 
+app.use(helmet());
+
 app.use(session({ secret: "HogeFuga" }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -33,6 +40,8 @@ app.use("/image", express.static(path.join(__dirname, "image")));
 app.use("/avatar", express.static(path.join(__dirname, "avatar")));
 
 app.get("/", function (req, res) {
+  logger.warn(req.session.user);
+
   Message.find({}, function (err, msgs) {
     if (err) throw err;
     return res.render("index", {
@@ -105,11 +114,13 @@ passport.deserializeUser(function (id, done) {
   });
 });
 
-app.get("/update", function (req, res, next) {
-  return res.render("update");
+var csrfProtection = csrf();
+
+app.get("/update", csrfProtection, function (req, res, next) {
+  return res.render("update", { csrf: req.csrfToken() });
 });
 
-app.post("/update", fileUpload(), function (req, res, next) {
+app.post("/update", fileUpload(), csrfProtection, function (req, res, next) {
   if (req.files && req.files.image) {
     req.files.image.mv("./image/" + req.files.image.name, function (err) {
       if (err) throw err;
@@ -133,6 +144,28 @@ app.post("/update", fileUpload(), function (req, res, next) {
       return res.redirect("/");
     });
   }
+});
+
+app.use(function (req, res, next) {
+  var err = new Error("Not Found");
+  err.status = 404;
+  return res.render("error", {
+    status: err.status,
+  });
+});
+
+app.use(function (err, req, res, next) {
+  errorLogger.error(err);
+  if (err.code === "EBADCSRFTOKEN") {
+    res.status(403);
+  } else {
+    res.status(err.status || 500);
+  }
+
+  return res.render("error", {
+    message: err.message,
+    status: err.status || 500,
+  });
 });
 
 var server = http.createServer(app);
