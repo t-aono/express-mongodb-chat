@@ -2,21 +2,19 @@ doctype html
 html(lang="ja")
   head
     meta(charset="utf-8")
+    link(href="/css/app.css" rel="stylesheet" type="text/css")
   body
-    if user 
-     nav 
-      span #{user.username}
-      img(src=user.avatar_path)
-    else 
-      nav
-        a(href="/signup") ユーザー登録
-        a(href="/login") ログイン
-    h1 メッセージ一覧
-    section 
-      each msg in messages 
-        div
-          h2 #{msg.username}
-          time #{msg.date}
-          p #{msg.message}
-        if msg.image_path
-          img(src=msg.image_path)
+    include header.pug
+    section(id="main")
+      h1 メッセージ一覧
+      section 
+        each msg in messages 
+          div(class="msg")
+            div(class="msg_meta")
+              h2(class="msg_username") #{msg.username}
+              time(class="msg_date") #{msg.date}
+              div(class="msg_main")
+                p(class="msg_body") #{msg.message}
+              img(src=user.avatar_path class="msg_avatar")
+            if msg.image_path
+              img(src=msg.image_path class="msg_image")

@@ -38,6 +38,7 @@ app.set("view engine", "pug");
 
 app.use("/image", express.static(path.join(__dirname, "image")));
 app.use("/avatar", express.static(path.join(__dirname, "avatar")));
+app.use("/css", express.static(path.join(__dirname, "css")));
 
 app.get("/", function (req, res) {
   logger.warn(req.session.user);
@@ -117,7 +118,10 @@ passport.deserializeUser(function (id, done) {
 var csrfProtection = csrf();
 
 app.get("/update", csrfProtection, function (req, res, next) {
-  return res.render("update", { csrf: req.csrfToken() });
+  return res.render("update", {
+    user: req.session && req.sessionID.user ? req.session.user : null,
+    csrf: req.csrfToken(),
+  });
 });
 
 app.post("/update", fileUpload(), csrfProtection, function (req, res, next) {
