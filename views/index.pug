@@ -13,9 +13,8 @@ html(lang="ja")
             div(class="msg_meta")
               h2(class="msg_username") #{msg.username}
               time(class="msg_date") #{moment(msg.date).format("YYYY-MM-DD HH:mm:ss")}
-              div(class="msg_main")
+              div
                 p(class="msg_body") #{msg.message}
-              if user && user.avatar_path
-                img(src=user.avatar_path class="msg_avatar")
+                img(src=msg.avatar_path class="msg_avatar")
             if msg.image_path
               img(src=msg.image_path class="msg_image")

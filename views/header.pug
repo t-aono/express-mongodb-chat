@@ -1,8 +1,9 @@
 nav(id="header") 
   if user 
       img(src=user.avatar_path class="avatar")    
-      a(href="/logout" class="username") #{user.username}
+      a(href="/" class="username") #{user.username}
       a(href="/update" class="nav_item") 投稿する
+      a(href="/logout" class="nav_item") ログアウト
   else
     a(href="/signup" class="nav_item") ユーザー登録
     a(href="/login" class="nav_item") ログイン
