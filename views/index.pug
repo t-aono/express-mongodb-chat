@@ -12,9 +12,10 @@ html(lang="ja")
           div(class="msg")
             div(class="msg_meta")
               h2(class="msg_username") #{msg.username}
-              time(class="msg_date") #{msg.date}
+              time(class="msg_date") #{moment(msg.date).format("YYYY-MM-DD HH:mm:ss")}
               div(class="msg_main")
                 p(class="msg_body") #{msg.message}
-              img(src=user.avatar_path class="msg_avatar")
+              if user && user.avatar_path
+                img(src=user.avatar_path class="msg_avatar")
             if msg.image_path
               img(src=msg.image_path class="msg_image")

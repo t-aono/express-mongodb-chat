@@ -8,6 +8,7 @@ var LocalStrategy = require("passport-local").Strategy;
 var session = require("express-session");
 var helmet = require("helmet");
 var csrf = require("csurf");
+var moment = require("moment-timezone");
 
 var logger = require("./lib/logger");
 var errorLogger = require("./lib/error_logger");
@@ -24,6 +25,8 @@ mongoose.connect("mongodb://localhost:27017/chat", function (err) {
     console.log("Successfully connected to MongoDB.");
   }
 });
+
+moment.tz.setDefault("Asia/Tokyo");
 
 app.use(helmet());
 
@@ -48,6 +51,7 @@ app.get("/", function (req, res) {
     return res.render("index", {
       messages: msgs,
       user: req.session && req.session.user ? req.session.user : null,
+      moment: moment,
     });
   });
 });
