@@ -8,6 +8,7 @@ var LocalStrategy = require("passport-local").Strategy;
 var session = require("express-session");
 var helmet = require("helmet");
 var csrf = require("csurf");
+var moment = require("moment-timezone");
 
 var logger = require("./lib/logger");
 var errorLogger = require("./lib/error_logger");
@@ -25,6 +26,8 @@ mongoose.connect("mongodb://localhost:27017/chat", function (err) {
   }
 });
 
+moment.tz.setDefault("Asia/Tokyo");
+
 app.use(helmet());
 
 app.use(session({ secret: "HogeFuga" }));
@@ -38,15 +41,15 @@ app.set("view engine", "pug");
 
 app.use("/image", express.static(path.join(__dirname, "image")));
 app.use("/avatar", express.static(path.join(__dirname, "avatar")));
+app.use("/css", express.static(path.join(__dirname, "css")));
 
 app.get("/", function (req, res) {
-  logger.warn(req.session.user);
-
   Message.find({}, function (err, msgs) {
     if (err) throw err;
     return res.render("index", {
       messages: msgs,
       user: req.session && req.session.user ? req.session.user : null,
+      moment: moment,
     });
   });
 });
@@ -66,6 +69,10 @@ app.post("/signup", fileUpload(), function (req, res, next) {
     });
     newUser.save((err) => {
       if (err) throw err;
+      req.session.user = {
+        username: newUser.username,
+        avatar_path: newUser.avatar_path,
+      };
       return res.redirect("/");
     });
   });
@@ -87,6 +94,11 @@ app.post("/login", passport.authenticate("local"), function (req, res, next) {
       return res.redirect("/");
     }
   });
+});
+
+app.get("/logout", function (req, res, next) {
+  delete req.session.user;
+  return res.redirect("/");
 });
 
 passport.use(
@@ -116,35 +128,54 @@ passport.deserializeUser(function (id, done) {
 
 var csrfProtection = csrf();
 
-app.get("/update", csrfProtection, function (req, res, next) {
-  return res.render("update", { csrf: req.csrfToken() });
+app.get("/update", checkAuth, csrfProtection, function (req, res, next) {
+  return res.render("update", {
+    user: req.session && req.session.user ? req.session.user : null,
+    csrf: req.csrfToken(),
+  });
 });
 
-app.post("/update", fileUpload(), csrfProtection, function (req, res, next) {
-  if (req.files && req.files.image) {
-    req.files.image.mv("./image/" + req.files.image.name, function (err) {
-      if (err) throw err;
+app.post(
+  "/update",
+  checkAuth,
+  fileUpload(),
+  csrfProtection,
+  function (req, res, next) {
+    if (req.files && req.files.image) {
+      req.files.image.mv("./image/" + req.files.image.name, function (err) {
+        if (err) throw err;
+        var newMessage = new Message({
+          username: req.body.username,
+          message: req.body.message,
+          avatar_path: req.body.avatar_path,
+          image_path: "/image/" + req.files.image.name,
+        });
+        newMessage.save((err) => {
+          if (err) throw err;
+          return res.redirect("/");
+        });
+      });
+    } else {
       var newMessage = new Message({
         username: req.body.username,
         message: req.body.message,
-        image_path: "/image/" + req.files.image.name,
+        avatar_path: req.body.avatar_path,
       });
       newMessage.save((err) => {
         if (err) throw err;
         return res.redirect("/");
       });
-    });
-  } else {
-    var newMessage = new Message({
-      username: req.body.username,
-      message: req.body.message,
-    });
-    newMessage.save((err) => {
-      if (err) throw err;
-      return res.redirect("/");
-    });
+    }
   }
-});
+);
+
+function checkAuth(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  } else {
+    return res.redirect("/login");
+  }
+}
 
 app.use(function (req, res, next) {
   var err = new Error("Not Found");
