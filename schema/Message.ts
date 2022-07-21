@@ -8,7 +8,7 @@ interface MessageFields {
   image_path: string;
 }
 
-const Message = new mongoose.Schema({
+const MessageSchema = new mongoose.Schema({
   username: String,
   message: String,
   avatar_path: String,
@@ -16,6 +16,4 @@ const Message = new mongoose.Schema({
   image_path: String,
 });
 
-const MessageModel = mongoose.model<MessageFields>("Message", Message);
-
-export default MessageModel;
+export default mongoose.model<MessageFields>("Message", MessageSchema);
