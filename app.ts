@@ -2,19 +2,19 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import moment from "moment-timezone";
 import helmet from "helmet";
-import passport from "passport";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import csrf from "csurf";
 
+import { default as Message } from "./schema/Message";
+import { default as User, UserFields } from "./schema/User";
+
+const passport = require("passport");
 const session = require("express-session");
 const http = require("http");
 const path = require("path");
 const LocalStrategy = require("passport-local").Strategy;
 const logger = require("./lib/logger");
 const errorLogger = require("./lib/error_logger");
-
-import { default as Message } from "./schema/Message";
-import { default as User, UserFields } from "./schema/User";
 
 const app: Express = express();
 
@@ -33,7 +33,7 @@ app.use(helmet());
 declare module "express-session" {
   interface SessionData {
     user: UserFields;
-    passport: any;
+    passport: { user: UserFields } | undefined;
   }
 }
 app.use(session({ secret: "HogeFuga" }));
@@ -91,7 +91,7 @@ app.get("/login", (req, res, next) => {
 
 app.post("/login", passport.authenticate("local"), (req, res, next) => {
   User.findOne(
-    { _id: req.session.passport.user },
+    { _id: req.session.passport!.user },
     (err: Error, user: UserFields) => {
       if (err || !user || !req.session) {
         return res.redirect("/login");
@@ -113,31 +113,32 @@ app.get("/logout", (req, res, next) => {
 
 passport.use(
   new LocalStrategy((username: string, password: string, done: any) => {
-    User.findOne(
-      { username: username },
-      (err: Error, user: { _id: string; password: string }) => {
-        if (err) return done(err);
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
-        }
-        if (user.password !== password) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-        return done(null, user);
+    User.findOne({ username: username }, (err: Error, user: UserFields) => {
+      if (err) return done(err);
+      if (!user) {
+        return done(null, false, { message: "Incorrect username." });
       }
-    );
+      if (user.password !== password) {
+        return done(null, false, { message: "Incorrect password." });
+      }
+      return done(null, user);
+    });
   })
 );
 
-passport.serializeUser((user: any, done) => {
-  done(null, user._id);
-});
+passport.serializeUser(
+  (user: { _id: string }, done: (_: null, _id: string) => void) => {
+    done(null, user._id);
+  }
+);
 
-passport.deserializeUser((id, done) => {
-  User.findOne({ _id: id }, (err: Error, user: UserFields) => {
-    done(err, user);
-  });
-});
+passport.deserializeUser(
+  (id: string, done: (err: Error, user: UserFields) => void) => {
+    User.findOne({ _id: id }, (err: Error, user: UserFields) => {
+      done(err, user);
+    });
+  }
+);
 
 const csrfProtection = csrf();
 
