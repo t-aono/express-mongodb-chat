@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 export interface UserFields {
-  _id?: string;
+  _id: string;
   username: string;
-  password?: string;
-  date?: Date;
+  password: string;
+  date: Date;
   avatar_path: string;
 }
 

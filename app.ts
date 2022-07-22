@@ -4,17 +4,18 @@ import moment from "moment-timezone";
 import helmet from "helmet";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import csrf from "csurf";
+import passport from "passport";
+import session from "express-session";
+import http from "http";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
+import { Strategy as LocalStrategy } from "passport-local";
 
-import { default as Message } from "./schema/Message";
-import { default as User, UserFields } from "./schema/User";
+import { default as Message } from "./schema/Message.js";
+import { default as User, UserFields } from "./schema/User.js";
 
-const passport = require("passport");
-const session = require("express-session");
-const http = require("http");
-const path = require("path");
-const LocalStrategy = require("passport-local").Strategy;
-const logger = require("./lib/logger");
-const errorLogger = require("./lib/error_logger");
+// import logger from "./lib/logger";
+// import errorLogger from "./lib/error_logger";
 
 const app: Express = express();
 
@@ -32,7 +33,7 @@ app.use(helmet());
 
 declare module "express-session" {
   interface SessionData {
-    user: UserFields;
+    user: Partial<UserFields>;
     passport: { user: UserFields } | undefined;
   }
 }
@@ -41,6 +42,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(express.urlencoded({ extended: true }));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
@@ -127,8 +131,8 @@ passport.use(
 );
 
 passport.serializeUser(
-  (user: { _id: string }, done: (_: null, _id: string) => void) => {
-    done(null, user._id);
+  (user: Partial<UserFields>, done: (_: null, _id: string) => void) => {
+    done(null, user._id!);
   }
 );
 
@@ -201,7 +205,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  errorLogger.error(err);
+  // errorLogger.error(err);
   if (err.code === "EBADCSRFTOKEN") {
     res.status(403);
   } else {
