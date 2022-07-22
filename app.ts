@@ -13,9 +13,8 @@ import { Strategy as LocalStrategy } from "passport-local";
 
 import { default as Message } from "./schema/Message.js";
 import { default as User, UserFields } from "./schema/User.js";
-
-// import logger from "./lib/logger";
-// import errorLogger from "./lib/error_logger";
+import logger from "./lib/logger.js";
+import errorLog from "./lib/error_log.js";
 
 const app: Express = express();
 
@@ -192,6 +191,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
     return next();
   } else {
+    logger.warn("Unauthenticated");
     return res.redirect("/login");
   }
 }
@@ -205,7 +205,8 @@ app.use((req, res, next) => {
 });
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  // errorLogger.error(err);
+  errorLog.error(err);
+
   if (err.code === "EBADCSRFTOKEN") {
     res.status(403);
   } else {
